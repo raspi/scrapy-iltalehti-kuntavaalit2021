@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from shutil import move
 from tempfile import NamedTemporaryFile
-from urllib.parse import urlsplit, SplitResult
 from dataclasses import asdict
 import scrapy
 
@@ -19,12 +18,15 @@ class KuntavaalitPipeline:
         fullpath = None
 
         if isinstance(item, Item):
-            srcurl: SplitResult = urlsplit(item.url)
+            if isinstance(item, ItemWithMunicipality):
+                basepath = os.path.abspath(os.path.join(basepath, item.municipality))
 
-            municipality = srcurl.path.strip('/').split('/')[-1]
-            fname = type(item).__name__.lower() + ".json"
+            fname = type(item).__name__.lower()
 
-            basepath = os.path.abspath(os.path.join(basepath, municipality))
+            if isinstance(item, Answer):
+                fname += "_" + str(item.candidateid)
+
+            fname += ".json"
             fullpath = os.path.abspath(os.path.join(basepath, fname))
 
         if fullpath is None:
@@ -37,7 +39,7 @@ class KuntavaalitPipeline:
             return
 
         # Save to temporary file
-        tmpf = NamedTemporaryFile("w", prefix="iltalehti-kv-", suffix=".json", encoding="utf8", delete=False)
+        tmpf = NamedTemporaryFile("w", prefix="alma-kv-", suffix=".json", encoding="utf8", delete=False)
         with tmpf as f:
             json.dump(asdict(item)['data'], f)
             f.flush()

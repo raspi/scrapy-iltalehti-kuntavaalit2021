@@ -1,3 +1,5 @@
+from urllib.parse import SplitResult, urlsplit
+
 import scrapy
 
 from kuntavaalit.items import *
@@ -15,16 +17,27 @@ class SiteSpider(scrapy.Spider):
         raise NotImplemented
 
     def load_questions(self, response: scrapy.http.TextResponse):
+        url: SplitResult = urlsplit(response.url)
+        municipality = url.path.strip('/').split('/')[-1]
+
         yield Question(
             url=response.url,
             data=response.json(),
+            municipality=municipality,
         )
 
     def load_candidates(self, response: scrapy.http.TextResponse):
-        yield Candidate(
-            url=response.url,
-            data=response.json(),
-        )
+        url: SplitResult = urlsplit(response.url)
+        municipality = url.path.strip('/').split('/')[-1]
+        data = response.json()
+
+        for i in data:
+            yield Answer(
+                url=response.url,
+                data=i,
+                municipality=municipality,
+                candidateid=i['id'],
+            )
 
     def load_parties(self, response: scrapy.http.TextResponse):
         yield Party(
@@ -51,8 +64,10 @@ class KuntaSpider(SiteSpider):
         self.id = id
 
     def parse(self, response: scrapy.http.TextResponse):
+        data = response.json()
+
         found: bool = False
-        for i in response.json():
+        for i in data:
             if str(i['id']) == self.id:
                 found = True
                 break
@@ -60,18 +75,23 @@ class KuntaSpider(SiteSpider):
         if not found:
             raise ValueError(f"id {self.id} not found")
 
+        yield Municipality(
+            url=response.url,
+            data=data,
+        )
+
         yield scrapy.Request(
-            response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/party"),
+            response.urljoin(f"/public/election/34/party"),
             callback=self.load_parties,
         )
 
         yield scrapy.Request(
-            response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/question/{self.id}"),
+            response.urljoin(f"/public/election/34/question/{self.id}"),
             callback=self.load_questions,
         )
 
         yield scrapy.Request(
-            response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/candidate/{self.id}"),
+            response.urljoin(f"/public/election/34/candidate/{self.id}"),
             callback=self.load_candidates,
         )
 
@@ -84,18 +104,25 @@ class KVSpider(SiteSpider):
     name = 'kaikki'
 
     def parse(self, response: scrapy.http.TextResponse):
+        data = response.json()
+
+        yield Municipality(
+            url=response.url,
+            data=data,
+        )
+
         yield scrapy.Request(
-            response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/party"),
+            response.urljoin(f"/public/election/34/party"),
             callback=self.load_parties,
         )
 
-        for i in response.json():
+        for i in data:
             yield scrapy.Request(
-                response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/question/{i['id']}"),
+                response.urljoin(f"/public/election/34/question/{i['id']}"),
                 callback=self.load_questions,
             )
 
             yield scrapy.Request(
-                response.urljoin(f"https://api.prod.vaalit.almamedia.fi/public/election/34/candidate/{i['id']}"),
+                response.urljoin(f"/public/election/34/candidate/{i['id']}"),
                 callback=self.load_candidates,
             )

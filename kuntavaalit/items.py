@@ -7,13 +7,26 @@ class Item:
     data: dict
 
 
-class Candidate(Item):
+@dataclass
+class Municipality(Item):
     pass
 
 
+@dataclass
 class Party(Item):
     pass
 
 
-class Question(Item):
+@dataclass
+class ItemWithMunicipality(Item):
+    municipality: str
+
+
+@dataclass
+class Answer(ItemWithMunicipality):
+    candidateid: int
+
+
+@dataclass
+class Question(ItemWithMunicipality):
     pass
