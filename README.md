@@ -1,6 +1,6 @@
 # scrapy-iltalehti-kuntavaalit2021
 
-Fetch all from [Iltalehti Kuntavaalit 2021](https://www.iltalehti.fi/kuntavaalit-2021/vaalikone) site
+Fetch all from Almamedia Kuntavaalit 2021 sites (Iltalehti, Uusi Suomi)
 
     scrapy crawl kaikki
 
