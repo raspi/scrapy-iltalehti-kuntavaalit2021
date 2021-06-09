@@ -1,6 +1,6 @@
 # scrapy-iltalehti-kuntavaalit2021
 
-Fetch all from Almamedia Kuntavaalit 2021 sites
+Fetch all from Almamedia Kuntavaalit 2021 sites (Iltalehti, Uusi Suomi)
 
     scrapy crawl kaikki
 
